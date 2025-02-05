@@ -187,9 +187,9 @@ class Predictor(BasePredictor):
             ddim_steps=ddim_steps
         )
         
-        filename = os.path.splitext(os.path.basename(input_file))[0]
-        sf.write(f"{output_folder}/SR_{filename}.wav", data=waveform, samplerate=48000,  subtype="PCM_16")
-        print(f"file created: {output_folder}/SR_{filename}.wav")
+        output_path = os.path.join(output_folder, f"SR_{os.path.basename(input_file)}")
+        sf.write(output_path, data=waveform, samplerate=48000, subtype="PCM_16")
+        print(f"file created: {output_path}")
         del self.audiosr, waveform
         gc.collect()
         torch.cuda.empty_cache()
