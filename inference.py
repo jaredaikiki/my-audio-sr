@@ -110,7 +110,7 @@ class Predictor(BasePredictor):
                     sf.write(temp_wav.name, chunk, sr)
 
                     out_chunk = super_resolution(
-                        self.audiosr,
+                        self.audiosr.module,
                         temp_wav.name,
                         seed=seed,
                         guidance_scale=guidance_scale,
