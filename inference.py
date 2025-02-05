@@ -51,6 +51,11 @@ class Predictor(BasePredictor):
         self.sr = 48000
         print(f"Loading {self.model_name} Model...")
         self.audiosr = build_model(model_name=self.model_name, device=self.device)
+    
+        if torch.cuda.device_count() > 1:
+            print(f"Using {torch.cuda.device_count()} GPUs!")
+            self.audiosr = torch.nn.DataParallel(self.audiosr)
+    
         print("Model loaded!")
 
     def process_audio(self, input_file, chunk_size=5.12, overlap=0.1, seed=None, guidance_scale=3.5, ddim_steps=50):
