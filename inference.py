@@ -153,10 +153,7 @@ class Predictor(BasePredictor):
             while start < len(audio):
                 end = min(start + chunk_samples, len(audio))
                 chunk = audio[start:end]
-                # Если последний фрагмент слишком короткий, пропускаем его
-                if i == len(chunks) - 1 and len(chunk) < chunk_samples:
-                    print("Last chunk is too short, skipping.")
-                    continue
+                
                 # Если последний фрагмент короче chunk_samples, дополняем его нулями
                 if len(chunk) < chunk_samples:
                     original_lengths.append(len(chunk))  # Сохраняем исходную длину
@@ -164,8 +161,10 @@ class Predictor(BasePredictor):
                 else:
                     original_lengths.append(chunk_samples) # Сохраняем полную длину
                 chunks.append(chunk)
+                
                 # Сдвигаем начало следующего фрагмента с учетом перекрытия
                 start += chunk_samples - overlap_samples if enable_overlap else chunk_samples
+                
             return chunks, original_lengths
 
         # Разбиваем каждый канал на фрагменты
