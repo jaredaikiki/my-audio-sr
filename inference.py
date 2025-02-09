@@ -204,18 +204,28 @@ class Predictor(BasePredictor):
 
                     # Добавляем отладочную печать для формы массива
                     print(f"out_chunk.shape = {out_chunk.shape}")
+                    print(f"out_chunk.dtype = {out_chunk.dtype}")
+
+                    # Преобразуем тип данных, если необходимо
+                    if out_chunk.dtype != np.float32 and out_chunk.dtype != np.float64:
+                        out_chunk = out_chunk.astype(np.float32)
+                    
 
                     # Проверяем длину out_chunk
                     min_length = 9600 # Примерное значение для block_size = 0.2 при sr=48000
                     if len(out_chunk) >= min_length:
                         # Нормализуем громкость с помощью pyloudnorm
-                        loudness_after = meter_after.integrated_loudness(out_chunk)
-                        out_chunk = pyln.normalize.loudness(out_chunk, loudness_after, loudness_before)
+                        out_chunk = out_chunk + 1e-6
+                        try:
+                            loudness_after = meter_after.integrated_loudness(out_chunk)
+                            out_chunk = pyln.normalize.loudness(out_chunk, loudness_after, loudness_before)
+                        except ValueError as e:
+                            print(f"Error during loudness normalization: {e}, skipping.")
                     else:
                         print(f"Chunk {i+1} is too short for loudness normalization, skipping.")
                         # Если фрагмент слишком короткий, можно просто пропустить нормализацию
                         # Или, как вариант, дополнить его нулями (см. вариант 3 выше)
-                        out_chunk = np.pad(out_chunk, (0, min_length - len(out_chunk)), 'constant')
+                        # out_chunk = np.pad(out_chunk, (0, min_length - len(out_chunk)), 'constant')
 
                     # Применяем плавное затухание/нарастание (fade-in/fade-out) на краях фрагментов
                     if enable_overlap:
