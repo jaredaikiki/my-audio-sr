@@ -202,9 +202,12 @@ class Predictor(BasePredictor):
                     num_samples_to_keep = int(original_lengths[i] * sample_rate_ratio)
                     out_chunk = out_chunk[:, :num_samples_to_keep].squeeze()
 
+                    # Добавляем отладочную печать для формы массива
+                    print(f"out_chunk.shape = {out_chunk.shape}")
+
                     # Проверяем длину out_chunk
-                    min_length = 2048 # Примерное значение для block_size = 0.2 при sr=48000
-                    if len(out_chunk) > min_length:
+                    min_length = 9600 # Примерное значение для block_size = 0.2 при sr=48000
+                    if len(out_chunk) >= min_length:
                         # Нормализуем громкость с помощью pyloudnorm
                         loudness_after = meter_after.integrated_loudness(out_chunk)
                         out_chunk = pyln.normalize.loudness(out_chunk, loudness_after, loudness_before)
