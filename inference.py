@@ -153,6 +153,9 @@ class Predictor(BasePredictor):
             while start < len(audio):
                 end = min(start + chunk_samples, len(audio))
                 chunk = audio[start:end]
+                # Если последний фрагмент слишком короткий, пропускаем его
+                if i == len(chunks) - 1 and len(chunk) < chunk_samples:
+                    print("Last chunk is too short, skipping.")
                 # Если последний фрагмент короче chunk_samples, дополняем его нулями
                 if len(chunk) < chunk_samples:
                     original_lengths.append(len(chunk))  # Сохраняем исходную длину
@@ -171,7 +174,6 @@ class Predictor(BasePredictor):
         sample_rate_ratio = self.sr / sr
         total_length = int(len(chunks_per_channel[0][0]) * output_chunk_samples - (len(chunks_per_channel[0][0]) - 1) * (output_overlap_samples if enable_overlap else 0))
         reconstructed_channels = [np.zeros((1, total_length)) for _ in audio_channels]
-
 
         meter_before = pyln.Meter(sr)  # Измеритель громкости для входного аудио
         meter_after = pyln.Meter(self.sr)  # Измеритель громкости для выходного аудио (48000 Гц)
@@ -207,18 +209,18 @@ class Predictor(BasePredictor):
                     
                     # Проверяем длину out_chunk
                     min_length = 9600 # Примерное значение для block_size = 0.2 при sr=48000
-                    if len(out_chunk) >= min_length:
-                        # Нормализуем громкость с помощью pyloudnorm
-                        try:
-                            loudness_after = meter_after.integrated_loudness(out_chunk)
-                            out_chunk = pyln.normalize.loudness(out_chunk, loudness_after, loudness_before)
-                        except ValueError as e:
+                    if len(out_chunk) < min_length:
+                        # как вариант, дополнить его нулями (см. вариант 3 выше)
+                        print(f"Chunk {i+1} is too short for loudness normalization, padding with zeros.")
+                        out_chunk = np.pad(out_chunk, (0, min_length - len(out_chunk)), 'constant')
+                    
+                    # Нормализуем громкость с помощью pyloudnorm
+                    try:
+                        loudness_after = meter_after.integrated_loudness(out_chunk)
+                        out_chunk = pyln.normalize.loudness(out_chunk, loudness_after, loudness_before)
+                    
+                    except ValueError as e:
                             print(f"Error during loudness normalization: {e}, skipping.")
-                    else:
-                        print(f"Chunk {i+1} is too short for loudness normalization, skipping.")
-                        # Если фрагмент слишком короткий, можно просто пропустить нормализацию
-                        # Или, как вариант, дополнить его нулями (см. вариант 3 выше)
-                        # out_chunk = np.pad(out_chunk, (0, min_length - len(out_chunk)), 'constant')
 
                     # Применяем плавное затухание/нарастание (fade-in/fade-out) на краях фрагментов
                     if enable_overlap:
