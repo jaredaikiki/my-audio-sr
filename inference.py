@@ -156,6 +156,7 @@ class Predictor(BasePredictor):
                 # Если последний фрагмент слишком короткий, пропускаем его
                 if i == len(chunks) - 1 and len(chunk) < chunk_samples:
                     print("Last chunk is too short, skipping.")
+                    continue
                 # Если последний фрагмент короче chunk_samples, дополняем его нулями
                 if len(chunk) < chunk_samples:
                     original_lengths.append(len(chunk))  # Сохраняем исходную длину
